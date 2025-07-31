@@ -240,6 +240,49 @@ console.log('Current data:', JSON.stringify($input.all(), null, 2));
 - Monthly API usage analysis
 - Quarterly workflow performance assessment
 
+### 8. Aggregate Node Calendar Integration Issues
+
+**Problem**: "attendee.split is not a function" or "Bad request" errors after adding Aggregate node
+
+**Symptoms**:
+- Calendar node fails after Aggregate node is added
+- Arrays being passed where strings are expected
+- Date fields not accessible in calendar node
+- "Bad request - please check your parameters" error
+
+**Solution**:
+```javascript
+// Update Calendar node fields for aggregated data:
+
+// Start Time:
+{{$json["Training Start Date"][0]}}T09:00:00
+
+// End Time: 
+{{$json["Training Start Date"][0]}}T17:00:00
+
+// Attendees:
+{{$json["Email Address"].join(",")}}
+
+// Event Title:
+Day 1 Product Training - {{$json["Training Start Date"][0]}} ({{$json["Full Name"].length}} trainees)
+
+// Event Description:
+Product Training Session for:
+• {{$json["Full Name"][0]}} - {{$json["Department"][0]}}
+• {{$json["Full Name"][1]}} - {{$json["Department"][1]}}
+```
+
+**Key Points**:
+- ✅ Use `[0]` to access first item in aggregated arrays for single values
+- ✅ Use `.join(",")` to convert email arrays to comma-separated strings  
+- ✅ Use `.length` to count number of trainees
+- ✅ Calendar expects strings, not arrays for most fields
+
+**Common Aggregate Node Configuration**:
+- **Aggregate**: "Individual Fields"
+- **Group By**: Training Start Date (operation: "first")
+- **Collect Fields**: Full Name, Email Address, Department (operation: "collect")
+
 ---
 
 **Still having issues?** Create a support ticket with:

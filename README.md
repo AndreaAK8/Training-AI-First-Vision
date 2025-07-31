@@ -61,9 +61,11 @@ Send Welcome Email (Gmail)
     ↓
 Update Status in Sheet
     ↓
-Create Calendar Event
+Aggregate by Training Date
     ↓
-Send Slack Notification (Optional)
+Create Group Calendar Event
+    ↓
+Send Lark Notification (Future)
 ```
 
 ### Files Structure
@@ -85,6 +87,15 @@ Send Slack Notification (Optional)
 
 ## 🎯 Features
 
+### 🆕 Latest Enhancement: Group Calendar Scheduling
+**Added: January 2025**
+
+The workflow now includes intelligent **group scheduling functionality**:
+- **Automatic Grouping**: Trainees with the same Training Start Date are grouped together
+- **Consolidated Events**: One calendar event per training date instead of individual events  
+- **Multi-Attendee Support**: All trainees for the same date are invited to a single session
+- **Scalable Solution**: Handles any number of trainees per training date efficiently
+
 ### ✅ Automated Welcome Emails
 - **Trigger**: New entry in "Master New Hire List - 2025" Google Sheet
 - **Content**: Personalized with trainee name, start date, and manager
@@ -96,10 +107,11 @@ Send Slack Notification (Optional)
 - Automatically updates status to "Email Sent" after delivery
 - Prevents duplicate emails if workflow is re-run
 
-### ✅ Calendar Integration
-- Automatically schedules "Day 1 Product Training" events
-- Invites trainee and trainer (Andrea K.)
-- Includes pre-training checklist in event description
+### ✅ Smart Calendar Integration
+- **Group Training Sessions**: Automatically groups trainees with same start date into single calendar events
+- **Dynamic Attendee Management**: Invites all trainees and trainer for consolidated sessions
+- **Intelligent Scheduling**: Creates one event per training date instead of individual events
+- **Detailed Event Info**: Includes trainee names, departments, and pre-training checklist
 
 ### ✅ Status Tracking
 - Tracks email delivery timestamps
