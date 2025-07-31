@@ -249,4 +249,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for efficient, human-centered training experiences**
 
-*"What took 45 minutes now takes 3 minutes. It's not just time saved - it's peace of mind."* 
+*"What took 45 minutes now takes 3 minutes. It's not just time saved - it's peace of mind."*
