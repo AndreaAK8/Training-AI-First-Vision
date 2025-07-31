@@ -1,0 +1,265 @@
+{
+  "name": "New Hire Welcome Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "mode": "custom",
+          "cronExpression": "*/5 * * * *"
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "Master New Hire List - 2025",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "f8d1e5c7-9b3a-4e2f-8c6d-1a5b3c7e9f2d",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-credential",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json[\"Status\"]}}",
+              "rightValue": "New",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "Filter New Hires Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "to": "={{$json[\"Email Address\"]}}",
+        "subject": "Welcome to the StoreHub Training Program, {{$json[\"Full Name\"]}}!",
+        "emailType": "html",
+        "message": "Hi {{$json[\"Full Name\"]}},\n\nWelcome to the StoreHub training program! I'm Andrea, and I'll be guiding you through your learning journey.\n\nWe're excited to have you starting your training on {{$json[\"Training Start Date\"]}}.\n\n🎯 **Essential Pre-Training Resources:**\n• Training Lark Wiki: https://storehub.sg.larksuite.com/wiki/V1Dqw3SnbibdDdkQKpmlNQGygef\n• Meet the Organization: https://storehub.sg.larksuite.com/wiki/V1Dqw3SnbibdDdkQKpmlNQGygef#share-LsQ0dCwVWoBYZqxOXwYl17fEgyS\n\n📚 **Your Training Journey:**\n• **Days 1-2**: Product Training (With Andrea)\n• **Days 3-6**: Role-Specific Training\n• **Week 2+**: Hands-on application and mentorship\n\n💻 **Technical Requirements:**\nEnsure you have your company-issued MacBook and iPad ready for your self-study modules and interactive sessions.\n\n❓ **Quick Start FAQ:**\n\n**Q: How should I prepare for Day 1?**\nA: Review the \"Meet the Organization\" link above and ensure your devices are set up and charged.\n\n**Q: What if I have technical issues during training?**\nA: Contact me directly at andrea.kaur@storehub.com or reach out to {{$json[\"Manager Name\"]}}.\n\n**Q: Will there be opportunities to ask questions during training?**\nA: Absolutely! Each session includes dedicated Q&A time, and I'm always available for additional support.\n\n**🚀 Pro Tip:** Start exploring the Training Wiki before your first day - it will give you a great head start!\n\nLooking forward to meeting you and supporting your success at StoreHub!\n\nBest regards,\nAndrea K.\nSenior Training & Knowledge Base Specialist\nStoreHub\n\n---\nP.S. Your manager {{$json[\"Manager Name\"]}} will also be in touch regarding your overall onboarding timeline.",
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-8901-2345-678901bcdefg",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        240
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-credential",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "append",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "Master New Hire List - 2025",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "mappingMode": "autoMapInputData",
+        "columnToMatchOn": "Email Address",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "Timestamp",
+              "value": "={{$json[\"Timestamp\"]}}"
+            },
+            {
+              "column": "Full Name", 
+              "value": "={{$json[\"Full Name\"]}}"
+            },
+            {
+              "column": "Email Address",
+              "value": "={{$json[\"Email Address\"]}}"
+            },
+            {
+              "column": "Department",
+              "value": "={{$json[\"Department\"]}}"
+            },
+            {
+              "column": "Training Start Date",
+              "value": "={{$json[\"Training Start Date\"]}}"
+            },
+            {
+              "column": "Manager Name",
+              "value": "={{$json[\"Manager Name\"]}}"
+            },
+            {
+              "column": "Status",
+              "value": "Email Sent"
+            },
+            {
+              "column": "Email Sent Date",
+              "value": "={{$now}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-9012-3456-789012cdefgh",
+      "name": "Update Status in Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-credential",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "start": "={{$json[\"Training Start Date\"]}}T09:00:00",
+        "end": "={{$json[\"Training Start Date\"]}}T17:00:00",
+        "additionalFields": {
+          "summary": "Day 1 Product Training - {{$json[\"Full Name\"]}}",
+          "description": "Product Training Session with Andrea K.\n\nTrainee: {{$json[\"Full Name\"]}}\nDepartment: {{$json[\"Department\"]}}\nManager: {{$json[\"Manager Name\"]}}\n\nPre-training checklist:\n✓ MacBook ready\n✓ iPad ready\n✓ Wiki access confirmed",
+          "attendees": [
+            "={{$json[\"Email Address\"]}}"
+          ]
+        }
+      },
+      "id": "d4e5f6a7-b8c9-0123-4567-890123defghi",
+      "name": "Create Training Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        240
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "google-calendar-credential",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter New Hires Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Hires Only": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Update Status in Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status in Sheet": {
+      "main": [
+        [
+          {
+            "node": "Create Training Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-14T10:00:00.000Z",
+      "updatedAt": "2025-01-14T10:00:00.000Z",
+      "id": "training-automation",
+      "name": "Training Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-14T10:00:00.000Z",
+  "versionId": "1"
+} 

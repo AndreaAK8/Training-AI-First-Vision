@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Training Program</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+        .section { margin-bottom: 25px; }
+        .resources { background-color: #e7f3ff; padding: 15px; border-radius: 5px; border-left: 4px solid #2196F3; }
+        .schedule { background-color: #f0f8ff; padding: 15px; border-radius: 5px; border-left: 4px solid #4CAF50; }
+        .requirements { background-color: #fff3e0; padding: 15px; border-radius: 5px; border-left: 4px solid #FF9800; }
+        .faq { background-color: #f5f5f5; padding: 15px; border-radius: 5px; border-left: 4px solid #9E9E9E; }
+        .footer { text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 8px; margin-top: 30px; }
+        .signature { margin-top: 30px; }
+        a { color: #2196F3; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        ul { padding-left: 20px; }
+        .tip { background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to the Training Program!</h1>
+            <p>We're excited to have you starting your training journey</p>
+        </div>
+
+        <div class="section">
+            <p>Hi <strong>{{TRAINEE_NAME}}</strong>,</p>
+            <p>Welcome to the {{COMPANY_NAME}} training program! I'm {{TRAINER_NAME}}, and I'll be guiding you through your learning journey.</p>
+            <p>We're excited to have you starting your training on <strong>{{TRAINING_START_DATE}}</strong>.</p>
+        </div>
+
+        <div class="section resources">
+            <h3>🎯 Essential Pre-Training Resources:</h3>
+            <ul>
+                <li><a href="{{TRAINING_WIKI_URL}}">Training Wiki</a></li>
+                <li><a href="{{ORGANIZATION_INFO_URL}}">Meet the Organization</a></li>
+                <li>Pre-training preparation checklist</li>
+            </ul>
+        </div>
+
+        <div class="section schedule">
+            <h3>📚 Your Training Journey:</h3>
+            <ul>
+                <li><strong>Days 1-2</strong>: Product Training (With {{TRAINER_NAME}})</li>
+                <li><strong>Days 3-6</strong>: Role-Specific Training</li>
+                <li><strong>Week 2+</strong>: Hands-on application and mentorship</li>
+            </ul>
+        </div>
+
+        <div class="section requirements">
+            <h3>💻 Technical Requirements:</h3>
+            <p>Ensure you have your company-issued MacBook and iPad ready for your self-study modules and interactive sessions.</p>
+        </div>
+
+        <div class="section faq">
+            <h3>❓ Quick Start FAQ:</h3>
+            
+            <p><strong>Q: How should I prepare for Day 1?</strong><br>
+            A: Review the "Meet the Organization" link above and ensure your devices are set up and charged.</p>
+            
+            <p><strong>Q: What if I have technical issues during training?</strong><br>
+            A: Contact me directly at {{TRAINER_EMAIL}} or reach out to {{MANAGER_NAME}}.</p>
+            
+            <p><strong>Q: Will there be opportunities to ask questions during training?</strong><br>
+            A: Absolutely! Each session includes dedicated Q&A time, and I'm always available for additional support.</p>
+        </div>
+
+        <div class="tip">
+            <strong>🚀 Pro Tip:</strong> Start exploring the Training Wiki before your first day - it will give you a great head start!
+        </div>
+
+        <div class="signature">
+            <p>Looking forward to meeting you and supporting your success at {{COMPANY_NAME}}!</p>
+            <p>Best regards,<br>
+            <strong>{{TRAINER_NAME}}</strong><br>
+            {{TRAINER_TITLE}}<br>
+            {{COMPANY_NAME}}</p>
+        </div>
+
+        <div class="footer">
+            <p><em>P.S. Your manager {{MANAGER_NAME}} will also be in touch regarding your overall onboarding timeline.</em></p>
+        </div>
+    </div>
+</body>
+</html> 
