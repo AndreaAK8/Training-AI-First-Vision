@@ -166,6 +166,49 @@
     },
     {
       "parameters": {
+        "aggregate": "individualFields",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "Training Start Date",
+              "renameField": false,
+              "operation": "first"
+            },
+            {
+              "fieldToAggregate": "Full Name",
+              "renameField": false,
+              "operation": "collect"
+            },
+            {
+              "fieldToAggregate": "Email Address",
+              "renameField": false,
+              "operation": "collect"
+            },
+            {
+              "fieldToAggregate": "Department",
+              "renameField": false,
+              "operation": "collect"
+            },
+            {
+              "fieldToAggregate": "Manager Name",
+              "renameField": false,
+              "operation": "collect"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-c9d0-1234-5678-901234efghij",
+      "name": "Aggregate Trainees",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        240
+      ]
+    },
+    {
+      "parameters": {
         "resource": "event",
         "operation": "create",
         "calendarId": {
@@ -174,22 +217,86 @@
           "mode": "list",
           "cachedResultName": "primary"
         },
-        "start": "={{$json[\"Training Start Date\"]}}T09:00:00",
-        "end": "={{$json[\"Training Start Date\"]}}T17:00:00",
+        "start": "={{$json[\"Training Start Date\"][0]}}T14:00:00",
+        "end": "={{$json[\"Training Start Date\"][0]}}T18:00:00",
         "additionalFields": {
-          "summary": "Day 1 Product Training - {{$json[\"Full Name\"]}}",
-          "description": "Product Training Session with Andrea K.\n\nTrainee: {{$json[\"Full Name\"]}}\nDepartment: {{$json[\"Department\"]}}\nManager: {{$json[\"Manager Name\"]}}\n\nPre-training checklist:\n✓ MacBook ready\n✓ iPad ready\n✓ Wiki access confirmed",
-          "attendees": [
-            "={{$json[\"Email Address\"]}}"
-          ]
+          "summary": "Day 1 Product Training",
+          "description": "Day 1 Product Training for {{$json[\"Full Name\"].length}} trainees:\n{{$json[\"Full Name\"].join(\", \")}}\n\nTraining with Andrea K.\nDepartments: {{$json[\"Department\"].join(\", \")}}\n\nPre-training checklist:\n✓ MacBook ready\n✓ iPad ready\n✓ Wiki access confirmed",
+          "attendees": "={{$json[\"Email Address\"].join(\",\")}}"
         }
       },
       "id": "d4e5f6a7-b8c9-0123-4567-890123defghi",
-      "name": "Create Training Calendar Event",
+      "name": "Day 1 Calendar",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 2,
       "position": [
-        1120,
+        1340,
+        240
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "google-calendar-credential",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "start": "={{$json[\"start\"][\"dateTime\"].split('T')[0].split('-')[0]}}-{{$json[\"start\"][\"dateTime\"].split('T')[0].split('-')[1]}}-{{String(Number($json[\"start\"][\"dateTime\"].split('T')[0].split('-')[2]) + 1).padStart(2, '0')}}T09:30:00+08:00",
+        "end": "={{$json[\"start\"][\"dateTime\"].split('T')[0].split('-')[0]}}-{{$json[\"start\"][\"dateTime\"].split('T')[0].split('-')[1]}}-{{String(Number($json[\"start\"][\"dateTime\"].split('T')[0].split('-')[2]) + 1).padStart(2, '0')}}T18:30:00+08:00",
+        "additionalFields": {
+          "summary": "Day 2 Product Training",
+          "description": "Day 2 Product Training continuation\n\nTraining with Andrea K.\n\nDay 2 Activities:\n• Advanced product features\n• Hands-on practice\n• Q&A session",
+          "attendees": "={{$json.attendees.map(att => att.email).join(',')}}"
+        }
+      },
+      "id": "f6a7b8c9-d0e1-2345-6789-012345fghijk",
+      "name": "Day 2 Training Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        240
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "google-calendar-credential",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "start": "={{$json[\"start\"][\"dateTime\"].split('T')[0]}}T15:00:00+08:00",
+        "end": "={{$json[\"start\"][\"dateTime\"].split('T')[0]}}T17:30:00+08:00",
+        "additionalFields": {
+          "summary": "Product Demo & Sync",
+          "description": "Product Demo & Sync Session\n\nDay 2 afternoon session:\n• Product demonstration\n• Team sync\n• Feedback session\n\nFacilitated by Andrea K.",
+          "attendees": "={{$json.attendees.map(att => att.email).join(',')}}"
+        }
+      },
+      "id": "a7b8c9d0-e1f2-3456-7890-123456ghijkl",
+      "name": "Day 2 Demo Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 2,
+      "position": [
+        1780,
         240
       ],
       "credentials": {
@@ -238,7 +345,40 @@
       "main": [
         [
           {
-            "node": "Create Training Calendar Event",
+            "node": "Aggregate Trainees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Trainees": {
+      "main": [
+        [
+          {
+            "node": "Day 1 Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Day 1 Calendar": {
+      "main": [
+        [
+          {
+            "node": "Day 2 Training Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Day 2 Training Calendar": {
+      "main": [
+        [
+          {
+            "node": "Day 2 Demo Calendar",
             "type": "main",
             "index": 0
           }

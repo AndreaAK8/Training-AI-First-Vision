@@ -104,29 +104,82 @@ The workflow uses these dynamic variables:
 
 ## Phase 4: Calendar Integration
 
-### 4.1 Configure Calendar Events
+The workflow creates **3 calendar events** for comprehensive training coverage:
 
-1. **Click on Google Calendar node**
+### 4.1 Day 1 Product Training
+
+1. **Click on "Day 1 Calendar" node**
 2. **Set calendar** (usually "primary" or your training calendar)
 3. **Configure event details:**
-   - **Title**: `Day 1 Product Training - {{$json["Full Name"]}}`
-   - **Start**: `{{$json["Training Start Date"]}}T09:00:00`
-   - **End**: `{{$json["Training Start Date"]}}T17:00:00`
+   - **Title**: `Day 1 Product Training`
+   - **Start**: `{{$json["Training Start Date"][0]}}T14:00:00`
+   - **End**: `{{$json["Training Start Date"][0]}}T18:00:00`
+   - **Attendees**: `{{$json["Email Address"].join(",")}}`
 
-### 4.2 Event Description Template
-
+4. **Event Description Template:**
 ```
-Product Training Session with [Your Name]
+Day 1 Product Training for {{$json["Full Name"].length}} trainees:
+{{$json["Full Name"].join(", ")}}
 
-Trainee: {{$json["Full Name"]}}
-Department: {{$json["Department"]}}
-Manager: {{$json["Manager Name"]}}
+Training with Andrea K.
+Departments: {{$json["Department"].join(", ")}}
 
 Pre-training checklist:
 ✓ MacBook ready
 ✓ iPad ready
 ✓ Wiki access confirmed
 ```
+
+### 4.2 Day 2 Product Training
+
+1. **Click on "Day 2 Training Calendar" node**
+2. **Configure automatic Day 2 scheduling:**
+   - **Title**: `Day 2 Product Training`
+   - **Start**: `{{$json["start"]["dateTime"].split('T')[0].split('-')[0]}}-{{$json["start"]["dateTime"].split('T')[0].split('-')[1]}}-{{String(Number($json["start"]["dateTime"].split('T')[0].split('-')[2]) + 1).padStart(2, '0')}}T09:30:00+08:00`
+   - **End**: `{{$json["start"]["dateTime"].split('T')[0].split('-')[0]}}-{{$json["start"]["dateTime"].split('T')[0].split('-')[1]}}-{{String(Number($json["start"]["dateTime"].split('T')[0].split('-')[2]) + 1).padStart(2, '0')}}T18:30:00+08:00`
+   - **Attendees**: `{{$json.attendees.map(att => att.email).join(',')}}`
+
+3. **Event Description:**
+```
+Day 2 Product Training continuation
+
+Training with Andrea K.
+
+Day 2 Activities:
+• Advanced product features
+• Hands-on practice
+• Q&A session
+```
+
+### 4.3 Day 2 Product Demo & Sync
+
+1. **Click on "Day 2 Demo Calendar" node**
+2. **Configure same-day afternoon session:**
+   - **Title**: `Product Demo & Sync`
+   - **Start**: `{{$json["start"]["dateTime"].split('T')[0]}}T15:00:00+08:00`
+   - **End**: `{{$json["start"]["dateTime"].split('T')[0]}}T17:30:00+08:00`
+   - **Attendees**: `{{$json.attendees.map(att => att.email).join(',')}}`
+
+3. **Event Description:**
+```
+Product Demo & Sync Session
+
+Day 2 afternoon session:
+• Product demonstration
+• Team sync
+• Feedback session
+
+Facilitated by Andrea K.
+```
+
+### 4.4 Calendar Node Connection Pattern
+
+**Important**: The calendar nodes must be connected in sequence:
+```
+Aggregate → Day 1 Calendar → Day 2 Training → Day 2 Demo
+```
+
+This ensures proper data flow and date calculations between events.
 
 ## Phase 5: Testing
 
@@ -150,9 +203,11 @@ Pre-training checklist:
    - Verify status changes to "Email Sent"
    - Check timestamp is recorded
 
-5. **Calendar Event**
-   - Confirm event is created
-   - Verify attendees and description
+5. **Calendar Events** (3 events total)
+   - **Day 1**: Confirm 2:00 PM - 6:00 PM event created
+   - **Day 2 Training**: Verify 9:30 AM - 6:30 PM next day 
+   - **Day 2 Demo**: Check 3:00 PM - 5:30 PM same day as training
+   - Verify attendees and descriptions for all events
 
 ### 5.2 End-to-End Testing
 
@@ -173,7 +228,10 @@ Pre-training checklist:
 4. **Check results:**
    - Email received?
    - Status updated to "Email Sent"?
-   - Calendar event created?
+   - **3 Calendar events created?**
+     - Day 1 Product Training (Training Start Date 2:00-6:00 PM)
+     - Day 2 Product Training (Next day 9:30 AM-6:30 PM)
+     - Day 2 Demo & Sync (Next day 3:00-5:30 PM)
 
 ## Phase 6: Deployment
 

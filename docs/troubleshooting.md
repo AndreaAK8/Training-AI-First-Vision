@@ -285,6 +285,86 @@ Product Training Session for:
 
 ---
 
+### 9. Day 2 Calendar Formula Issues
+
+**Problem**: Formulas for Day 2 calendar events turn red (invalid) in N8N
+
+**Symptoms**:
+- Day 1 calendar works fine
+- Day 2 formulas show red error indicators
+- Complex date manipulation formulas fail
+- "Expression error" messages
+
+**Solutions**:
+
+1. **Use Calendar Output from Previous Node**:
+   ```javascript
+   // Instead of complex date manipulation, use Day 1 calendar output:
+   
+   // Day 2 Training Start (using Day 1 output):
+   {{$json["start"]["dateTime"].split('T')[0].split('-')[0]}}-{{$json["start"]["dateTime"].split('T')[0].split('-')[1]}}-{{String(Number($json["start"]["dateTime"].split('T')[0].split('-')[2]) + 1).padStart(2, '0')}}T09:30:00+08:00
+   
+   // Day 2 Demo Start (using Day 2 Training output - same day):
+   {{$json["start"]["dateTime"].split('T')[0]}}T15:00:00+08:00
+   ```
+
+2. **Connection Pattern**:
+   ```
+   Aggregate → Day 1 Calendar → Day 2 Training → Day 2 Demo
+   ```
+
+3. **Attendees Formula for Each Node**:
+   ```javascript
+   // For aggregated data (Day 1):
+   {{$json["Email Address"].join(",")}}
+   
+   // For calendar output data (Day 2 nodes):
+   {{$json.attendees.map(att => att.email).join(',')}}
+   ```
+
+**Key Points**:
+- ✅ Chain calendar nodes to pass date data
+- ✅ Use different attendees formulas for different data sources
+- ✅ Include timezone (+08:00) for consistency
+- ❌ Avoid complex date manipulation in expressions
+
+### 10. Double Calendar Invitations
+
+**Problem**: Attendees receive multiple calendar invitations for the same event
+
+**Symptoms**:
+- Duplicate calendar entries
+- Multiple email notifications
+- Same attendees listed multiple times
+
+**Solutions**:
+
+1. **Fix Attendees Field Formula**:
+   ```javascript
+   // Use this cleaned formula:
+   {{$json.attendees.map(att => att.email).join(',')}}
+   
+   // Or if from aggregated data:
+   {{$json["Email Address"].join(",")}}
+   ```
+
+2. **Check for Duplicate Executions**:
+   - Verify workflow isn't running multiple times
+   - Check execution log for duplicate entries
+   - Ensure proper status filtering (New → Email Sent)
+
+3. **Calendar Node Settings**:
+   - **Resource**: Event
+   - **Operation**: Create (not Update)
+   - **Additional Fields → Attendees**: (use formula above)
+
+**Prevention**:
+- Test with single attendee first
+- Monitor execution logs
+- Use unique event titles for tracking
+
+---
+
 **Still having issues?** Create a support ticket with:
 1. Exact error message
 2. Screenshot of node configuration
