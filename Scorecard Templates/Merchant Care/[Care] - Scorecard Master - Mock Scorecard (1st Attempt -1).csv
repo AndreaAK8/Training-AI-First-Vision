@@ -1,0 +1,19 @@
+Player Name,,,,,
+Evaluator Name,,,,,
+Scenario,,,,,
+Categories,Attributes,Result,Comments,Score,Overall
+Greetings & Farewell,Warm Greetings,Yes,,0.5,10
+,Farewell,Yes,,0.5,
+Process,Probing,Yes,,0.1,60
+,Diagnose,Yes,,0.1,
+,Troubleshooting,Yes,,0.1,
+,Resolution,Yes,,0.1,
+,Information Accuracy,Yes,,0.1,
+,Escalation,NA,,N/A,
+Effective Handling,Active Listening,Yes,,0.5,30
+,Courteous,Yes,,0.5,
+,Communication Flow,Yes,,0.5,
+,Professionalism,Yes,,0.5,
+,Engagement,Yes,,0.5,
+,Ownership,Yes,,0.5,
+Final Score,,,,,100%

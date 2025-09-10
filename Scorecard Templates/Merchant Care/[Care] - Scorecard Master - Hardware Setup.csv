@@ -1,0 +1,17 @@
+Installation Score,,,,,
+Participant Name        ,,,,,Total Score
+Evaluator Name   ,,,,,100%
+Evaluation Date   ,,,,,
+Scenario,,,,,
+Parameters,Total score,Remark,Poor,Average,Strong
+,,,0,1,2
+Steps,,,,,
+How effectively did the player introduce the devices and explain their ports?,2,,Did not perform,Incomplete narration,Detailed narration
+How clearly did the player explain the purpose of the ports?,2,,Did not perform,Incomplete narration,Detailed narration
+How effectively did the player set up the hardware connections?,2,,Did not perform,"Missed some steps (e.g forget to switch on wifi, did not properly connect LAN port) with no narration",Able to fix correctly with clear narration
+How efficiently did the player search for and identify the correct printers within the system?,2,,Did not search for printer,Search for printer but unable to locate (E.g LAN port not properly fixed) with/without narration,Able to fix correctly with clear narration
+"How accurately did the player complete the setup process, ensuring everything was configured and functioning properly?",2,,Was not able to configure,Configured but no narration ,Able to setup correctly and all printers working
+Did the player demonstrate the ability to conduct the Feed test and accurately interpret the results?,2,,Was not able to perform feed test,Feed test performed but no narration ,Performed Feed test and clear narration
+Did the player follow the correct steps to reset the printer successfully?,2,,Was not able to reset,Reset but printer did not work/no narration,Successfully reset
+Did the player successfully configure the printer?,2,,Not able to configure printer,Configured but nor working/no narration,Successfully understood the combination and configured the printer.
+"After configuration, did the player manage to reassign the printer?",2,,Printer was still not working,1/2 printer worked but no narration,Successfully reassigned the printer after configuration.
