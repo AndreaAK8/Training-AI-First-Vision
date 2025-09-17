@@ -127,6 +127,290 @@
     },
     {
       "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "6f3cf47f-8f8b-4e89-9cef-fe8866d7592a",
+      "name": "Get Current Completion Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const assessmentData = $('Code').first().json; // The current assessment completion data\nconst allTrainees = $input.all(); // All trainees from master list\n\nconst traineeName = assessmentData.trainee_name;\nconst assessmentName = assessmentData.assessment_name;\n\n// Try multiple matching strategies\nlet traineeRow = null;\n\n// 1. Exact match\ntraineeRow = allTrainees.find(row => \n  row.json['Full Name'] === traineeName\n);\n\n// 2. If no exact match, try initials matching\nif (!traineeRow) {\n  traineeRow = allTrainees.find(row => {\n    const fullName = row.json['Full Name'] || '';\n    // Extract initials from full name (e.g., \"Andrea K\" -> \"AK\")\n    const initials = fullName.split(' ').map(name => name.charAt(0)).join('');\n    return initials === traineeName;\n  });\n}\n\n// 3. If still no match, try partial matching\nif (!traineeRow) {\n  traineeRow = allTrainees.find(row => {\n    const fullName = row.json['Full Name'] || '';\n    return fullName.includes(traineeName) || traineeName.includes(fullName.split(' ')[0]);\n  });\n}\n\nif (!traineeRow) {\n  // Still not found - return error with more details\n  return [{ json: { \n    error: 'Trainee not found in master list', \n    searched_for: traineeName,\n    available_names: allTrainees.map(t => t.json['Full Name']).slice(0, 5)\n  }}];\n}\n\n// Get current completion count\nconst currentCompleted = parseInt(traineeRow.json['Total Assessments Completed'] || 0);\nconst totalRequired = parseInt(traineeRow.json['Total Assessments Required'] || 0);\n\n// Simple duplicate prevention: if current < required, increment\nconst shouldIncrement = currentCompleted < totalRequired;\n\nreturn [{\n  json: {\n    trainee_name: traineeName,\n    matched_full_name: traineeRow.json['Full Name'],\n    current_completed: currentCompleted,\n    new_completed: shouldIncrement ? currentCompleted + 1 : currentCompleted,\n    should_increment: shouldIncrement,\n    total_required: totalRequired,\n    assessment_name: assessmentName,\n    // Keep original assessment data for email updates\n    ...assessmentData\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "1eec170d-1ee9-4232-a47f-60c5aa58d0dd",
+      "name": "Check Duplicate & Calculate New Count"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2eeab772-69ca-4fd0-a94a-5545d293f3ec",
+              "leftValue": "={{ $json.should_increment.toString() }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "c0222122-29d5-4d05-ad01-8bdbb15085fd",
+              "leftValue": "={{ $json.current_completed }}",
+              "rightValue": "={{ $json.total_required }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "296fc5d2-412a-4bcb-8dfd-54eaaa58713e",
+      "name": "Should Update Counter?"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "=",
+            "Email Address": "={{ $json.trainee_email }}",
+            "Total Assessments Completed": "={{ $json.new_completed }}"
+          },
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Training Start Date",
+              "displayName": "Training Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Name",
+              "displayName": "Coach Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Sent Date",
+              "displayName": "Email Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Coach",
+              "displayName": "Assigned Coach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Notified",
+              "displayName": "Coach Notified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Required",
+              "displayName": "Total Assessments Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Completed",
+              "displayName": "Total Assessments Completed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Incomplete",
+              "displayName": "Total Assessments Incomplete",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days since Training Start ",
+              "displayName": "Days since Training Start ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Reminder Sent",
+              "displayName": "Last Reminder Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1680,
+        -208
+      ],
+      "id": "638d2c56-ad60-4056-88a7-b56f5dac48ff",
+      "name": "Update Completion counter",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
@@ -414,11 +698,11 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1040,
-        0
+        1920,
+        16
       ],
       "id": "5dd2c396-eb7c-4985-ab18-e00e4bb52519",
-      "name": "Append or update row in sheet",
+      "name": "Update Reminder Sent",
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "xWkX5ODqyr8g6JBX",
@@ -427,7 +711,75 @@
       }
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Get Current Completion Status": [
+      {
+        "json": {
+          "row_number": 2,
+          "Timestamp": "2025-09-10 13:08:10",
+          "Full Name": "Andrea K",
+          "Email Address": "andrea.kaur@storehub.com",
+          "Department": "Merchant Care",
+          "Training Start Date": "2025-09-07",
+          "Coach Name": "Ain",
+          "Status": "Email Sent",
+          "Email Sent Date": "2025-09-10T13:08:10.486+08:00",
+          "Assigned Coach": "",
+          "Coach Notified": "",
+          "Total Assessments Required": 2,
+          "Total Assessments Completed": "",
+          "Total Assessments Incomplete": 2,
+          "Days since Training Start ": 3,
+          "Last Reminder Sent": "",
+          "Reminder Count": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 3,
+          "Timestamp": "2025-09-10 13:08:10",
+          "Full Name": "Ain",
+          "Email Address": "ain.nizar@storehub.com",
+          "Department": "Merchant Onboarding Manager",
+          "Training Start Date": "2025-09-07",
+          "Coach Name": "Andrea",
+          "Status": "Email Sent",
+          "Email Sent Date": "2025-09-10T13:08:10.487+08:00",
+          "Assigned Coach": "",
+          "Coach Notified": "",
+          "Total Assessments Required": 1,
+          "Total Assessments Completed": "",
+          "Total Assessments Incomplete": 1,
+          "Days since Training Start ": 3,
+          "Last Reminder Sent": "",
+          "Reminder Count": ""
+        }
+      }
+    ],
+    "Check Duplicate & Calculate New Count": [
+      {
+        "json": {
+          "trainee_name": "AK",
+          "matched_full_name": "Andrea K",
+          "current_completed": 0,
+          "new_completed": 1,
+          "should_increment": true,
+          "total_required": 2,
+          "assessment_name": "Hardware Assessment",
+          "trainee_email": "andrea.kaur@storehub.com",
+          "coach_name": "Ain",
+          "coach_email": "ain.nizar@storehub.com",
+          "role": "Merchant Care",
+          "raw_score": 0.7222222222222222,
+          "percentage_score": "72.2%",
+          "pass_status": "FAIL",
+          "status_emoji": "❌",
+          "timestamp": "9/8/2025 19:11:52",
+          "submission_date": "9/10/2025"
+        }
+      }
+    ]
+  },
   "connections": {
     "Schedule Trigger": {
       "main": [
@@ -477,7 +829,58 @@
       "main": [
         [
           {
-            "node": "Append or update row in sheet",
+            "node": "Get Current Completion Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Completion Status": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate & Calculate New Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate & Calculate New Count": {
+      "main": [
+        [
+          {
+            "node": "Should Update Counter?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Update Counter?": {
+      "main": [
+        [
+          {
+            "node": "Update Completion counter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Reminder Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Completion counter": {
+      "main": [
+        [
+          {
+            "node": "Update Reminder Sent",
             "type": "main",
             "index": 0
           }
@@ -489,7 +892,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "dd223dc8-47f3-44ae-9ad2-949f88c7af57",
+  "versionId": "495da9af-70df-4612-8ed6-0be39af7f7b3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c6eacfac65a18e093e28166dd4b59b1b46d26a5d7ab5531653cb1cf62db95e85"
