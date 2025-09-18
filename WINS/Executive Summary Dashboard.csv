@@ -1,0 +1,21 @@
+SECTION,METRIC,FORMULA/LOGIC,DISPLAY FORMAT,DATA SOURCE
+Overall Training Metrics,Total Active Trainees,COUNT(Status='Email Sent'),Number,Master New Hire List
+Overall Training Metrics,Total Assessments Completed,SUM(All Response Sheets),Number,All Assessment Responses  
+Overall Training Metrics,Overall Completion Rate,Completed/Required * 100,Percentage,Master New Hire List
+Overall Training Metrics,Average Score Across All Assessments,AVERAGE(All Scores),Percentage,All Assessment Responses
+Overall Training Metrics,Trainees At Risk,COUNT(Total Incomplete > 2 AND Days > 7),Number,Master New Hire List
+Role Breakdown,Merchant Care - Active,COUNT(Role='Merchant Care' AND Status='Email Sent'),Number,Master New Hire List
+Role Breakdown,Merchant Care - Avg Score,AVERAGE(Scores WHERE Role='Merchant Care'),Percentage,Assessment Responses
+Role Breakdown,MOM - Active,COUNT(Role='Merchant Onboarding Manager' AND Status='Email Sent'),Number,Master New Hire List
+Role Breakdown,MOM - Avg Score,AVERAGE(Scores WHERE Role='Merchant Onboarding Manager'),Percentage,Assessment Responses
+Role Breakdown,CSM - Active,COUNT(Role='Customer Success Manager' AND Status='Email Sent'),Number,Master New Hire List
+Role Breakdown,CSM - Avg Score,AVERAGE(Scores WHERE Role='Customer Success Manager'),Percentage,Assessment Responses
+Recent Activity,Assessments Completed Today,COUNT(Timestamp = TODAY()),Number,All Assessment Responses
+Recent Activity,New Hires Added This Week,COUNT(Email Sent Date >= 7 days ago),Number,Master New Hire List
+Recent Activity,Overdue Assessments,COUNT(Days Since Training Start > Expected + 2),Number,Master New Hire List
+Performance Indicators,Pass Rate (>80%),COUNT(Score >= 80) / COUNT(Score),Percentage,All Assessment Responses
+Performance Indicators,Average Days to Complete,AVERAGE(Training Days for Completed),Days,Combined Analysis
+Performance Indicators,Coach Response Rate,COUNT(Assessments Completed) / COUNT(Assessments Assigned),Percentage,Combined Analysis
+Alerts & Warnings,Critical Issues,COUNT(Days Overdue > 5),Number,Master New Hire List
+Alerts & Warnings,Failing Assessments,COUNT(Score < 60),Number,All Assessment Responses
+Alerts & Warnings,Coach Attention Needed,COUNT(No Response > 3 days),Number,Combined Analysis

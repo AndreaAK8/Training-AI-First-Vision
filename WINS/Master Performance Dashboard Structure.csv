@@ -1,0 +1,9 @@
+TAB NAME,PURPOSE,DESCRIPTION,KEY METRICS
+Executive Summary,High-Level Overview,"Overall training performance across all roles and batches","Total Trainees, Completion Rate, Average Score, At-Risk Count"
+Individual Progress,Trainee Tracking,"Detailed progress for each trainee with score breakdown","Trainee Name, Role, Completed Assessments, Average Score, Status"
+Role Performance,Role Analytics,"Performance comparison across different roles","Role, Average Score, Pass Rate, Time to Complete, Top Performers"
+Coach Insights,Coach Analytics,"Coach performance and workload analysis","Coach Name, Trainees Managed, Assessment Completion Rate, Average Score Given"
+Assessment Analytics,Assessment Breakdown,"Performance analysis by assessment type","Assessment Name, Average Score, Pass Rate, Common Issues, Completion Time"
+Early Warning System,Risk Management,"Identify trainees at risk of failing or delays","Trainee Name, Risk Level, Issues Identified, Days Overdue, Recommended Actions"
+Trends & Patterns,Historical Analysis,"Track performance trends over time","Monthly Performance, Role Trends, Improvement Areas, Success Patterns"
+Real-Time Alerts,Live Monitoring,"Active alerts and notifications requiring attention","Alert Type, Trainee, Issue, Urgency, Action Required"
