@@ -1,0 +1,186 @@
+{
+  "name": "Win 2: Assessment Scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d6b8cfcd-ee8f-4016-ac66-415b0539bf22",
+      "name": "Monitor Status Changes",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "5RdjBLcNZ5y3PeRk",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6b7518e0-ab8b-42ae-8666-f024510771e1",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Email Sent",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "dc604e86-c423-4883-8edb-8a85e0eaa2f8",
+              "leftValue": "={{ $json['Training Start Date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a526e2ba-26c7-4fce-a8e5-fee9075c3e80",
+              "leftValue": "={{ $json['Days since Training Start '] }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "30a2ac95-b170-4b62-8847-fa2c9ae8ea9e",
+      "name": "Ready for Assessment?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Log input data for debugging\nconsole.log('=== WIN 2 DEBUG LOG ===');\nconsole.log('Number of items received:', items.length);\n\nif (items.length > 0) {\n  console.log('Sample item fields:', Object.keys(items[0].json));\n  console.log('Sample item data:', JSON.stringify(items[0].json, null, 2));\n}\n\n// Coach name to email mapping\nfunction getCoachEmail(coachName) {\n  const coachMapping = {\n    'Ain': 'ain.nizar@storehub.com',\n    'Andrea': 'andrea.kaur@storehub.com',\n    'Victor': 'victor.teng@storehub.com',\n    'William': 'william.yew@storehub.com',\n    'Izzuddin': 'izzuddin.azizol@storehub.com',\n    'Javelyn': 'javelyn.hee@storehub.com',\n    'Nic': 'nicholas.eng@storehub.com',\n    'Joshua': 'joshua.guevarra@storehub.com'\n  };\n  return coachMapping[coachName] || 'andrea.kaur@storehub.com';\n}\n\n// Validate required fields\nfunction validateTraineeData(trainee) {\n  const requiredFields = ['Full Name', 'Email Address', 'Department', 'Coach Name', 'Days since Training Start '];\n  const missingFields = requiredFields.filter(field => !trainee[field]);\n  \n  if (missingFields.length > 0) {\n    console.log('Missing required fields:', missingFields);\n    return false;\n  }\n  return true;\n}\n\n// COMPLETE Assessment schedule mapping - all assessments including Business Consultant\nconst assessmentSchedule = {\n  'Merchant Care': [\n    { \n      name: 'Hardware Assessment', \n      day: 3, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    },\n    { \n      name: 'Care Mock Test', \n      day: 4, \n      formUrl: 'https://forms.gle/FKaQMgkzC6waDdhh8', \n      instructions: 'To assess new hire product knowledge and soft skills when handling merchants' \n    }\n  ],\n  'Merchant Onboarding Manager': [\n    { \n      name: 'Hardware Assessment', \n      day: 3, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    },\n    { \n      name: 'Training Assessment (F&B)', \n      day: 5, \n      formUrl: 'https://forms.gle/PoWWciHpStBQyoy2A', \n      instructions: 'To evaluate training skills and product knowledge' \n    },\n    { \n      name: 'Training Assessment (Retail)', \n      day: 5, \n      formUrl: 'https://forms.gle/NLz3fTGEzrtig3qz9', \n      instructions: 'To evaluate training skills and product knowledge' \n    },\n    { \n      name: 'Welcome Call', \n      day: 6, \n      formUrl: 'https://forms.gle/faZ9tWtdaq34Sb9r7', \n      instructions: 'To evaluate Welcome Call skills' \n    },\n    { \n      name: 'Go Live Call', \n      day: 6, \n      formUrl: 'https://forms.gle/8RqXyt7unMg25skK9', \n      instructions: 'To evaluate Go Live skills' \n    },\n    { \n      name: 'Training Mock Test (F&B)', \n      day: 6, \n      formUrl: 'https://forms.gle/CcfmMcrb48cj6iMx6', \n      instructions: 'To evaluate training skills and product knowledge based on a scenario' \n    },\n    { \n      name: 'Training Mock Test (Retail)', \n      day: 6, \n      formUrl: 'https://forms.gle/F5SaX7CURqrNoEV66', \n      instructions: 'To evaluate training skills and product knowledge based on a scenario' \n    }\n  ],\n  'Customer Success Manager': [\n    { \n      name: 'Hardware Assessment', \n      day: 3, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    },\n    { \n      name: 'Hardware Setup & Troubleshoot', \n      day: 4, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    },\n    { \n      name: 'CSM Assessment', \n      day: 5, \n      formUrl: 'https://forms.gle/89McoPTBytfjnh78A', \n      instructions: 'Test on CSM skills' \n    },\n    { \n      name: 'Roleplay 1', \n      day: 5, \n      formUrl: 'https://forms.gle/SDGiQgRzWkWKAj7f6', \n      instructions: 'Complete mock with coach' \n    },\n    { \n      name: 'Roleplay 2', \n      day: 5, \n      formUrl: 'https://forms.gle/SDGiQgRzWkWKAj7f6', \n      instructions: 'Complete mock with coach' \n    }\n  ],\n  'Onboarding Specialist': [\n    { \n      name: 'Hardware Assessment', \n      day: 3, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    },\n    { \n      name: 'Training Assessment (F&B)', \n      day: 5, \n      formUrl: 'https://forms.gle/PoWWciHpStBQyoy2A', \n      instructions: 'To evaluate training skills and product knowledge' \n    },\n    { \n      name: 'Training Assessment (Retail)', \n      day: 5, \n      formUrl: 'https://forms.gle/NLz3fTGEzrtig3qz9', \n      instructions: 'To evaluate training skills and product knowledge' \n    },\n    { \n      name: 'Training Mock Test (F&B)', \n      day: 6, \n      formUrl: 'https://forms.gle/CcfmMcrb48cj6iMx6', \n      instructions: 'To evaluate training skills and product knowledge based on a scenario' \n    },\n    { \n      name: 'Training Mock Test (Retail)', \n      day: 6, \n      formUrl: 'https://forms.gle/F5SaX7CURqrNoEV66', \n      instructions: 'To evaluate training skills and product knowledge based on a scenario' \n    }\n  ],\n  'Onboarding Coordinator': [\n    { \n      name: 'Hardware Assessment', \n      day: 3, \n      formUrl: 'https://forms.gle/4uqyPthsVweeZPqx6', \n      instructions: 'Demonstrate basic troubleshooting based on scenario' \n    }\n  ],\n  'Business Consultant': [\n    { \n      name: 'Pitching F&B', \n      day: 3, \n      formUrl: 'https://forms.gle/T8r3RasUErBVoN2K9', \n      instructions: 'To evaluate presentation skills' \n    },\n    { \n      name: 'Pitching Retail', \n      day: 3, \n      formUrl: 'https://forms.gle/T8r3RasUErBVoN2K9', \n      instructions: 'To evaluate presentation skills' \n    },\n    { \n      name: 'SPIN Trial', \n      day: 3, \n      formUrl: 'https://forms.gle/bRwtLNVJ1iM5iAdS6', \n      instructions: 'To evaluate SPIN technique. This is a trial run assessment.' \n    },\n    { \n      name: 'SPIN 2', \n      day: 3, \n      formUrl: 'https://forms.gle/bRwtLNVJ1iM5iAdS6', \n      instructions: 'To evaluate SPIN technique.' \n    },\n    { \n      name: 'Closing 1', \n      day: 4, \n      formUrl: 'https://forms.gle/HWRkF7SEQhLqdFJ28', \n      instructions: 'To evaluate Closing technique.' \n    },\n    { \n      name: 'Closing 2', \n      day: 4, \n      formUrl: 'https://forms.gle/HWRkF7SEQhLqdFJ28', \n      instructions: 'To evaluate Closing technique.' \n    },\n    { \n      name: 'Full Pitching F&B', \n      day: 5, \n      formUrl: 'https://forms.gle/SVf58PiWJMC9D3fF7', \n      instructions: 'To evaluate Full pitching.' \n    },\n    { \n      name: 'Full Pitching Retail', \n      day: 5, \n      formUrl: 'https://forms.gle/SVf58PiWJMC9D3fF7', \n      instructions: 'To evaluate Full pitching.' \n    },\n    { \n      name: 'Mock Test (F&B)', \n      day: 6, \n      formUrl: 'https://forms.gle/BiZNVduMTUREzCvt5', \n      instructions: 'To evaluate players understanding of the whole pitching combo.' \n    },\n    { \n      name: 'Mock Test (Retail)', \n      day: 6, \n      formUrl: 'https://forms.gle/BiZNVduMTUREzCvt5', \n      instructions: 'To evaluate players understanding of the whole pitching combo.' \n    }\n  ]\n};\n\nconst scheduledAssessments = [];\n\nconsole.log('Processing trainees...');\n\nitems.forEach((item, index) => {\n  const trainee = item.json;\n  \n  console.log(`\\n=== Processing trainee ${index + 1} ===`);\n  console.log('Trainee data:', JSON.stringify(trainee, null, 2));\n  \n  // Validate required data\n  if (!validateTraineeData(trainee)) {\n    console.log('❌ Invalid trainee data, skipping');\n    return;\n  }\n  \n  const role = trainee.Department;\n  const daysTraining = parseInt(trainee['Days since Training Start ']);\n  \n  console.log(`Role: ${role}, Days Training: ${daysTraining}`);\n  \n  const assessments = assessmentSchedule[role];\n  if (!assessments) {\n    console.log(`❌ No assessments found for role: ${role}`);\n    return;\n  }\n  \n  // Find assessments due today\n  const dueToday = assessments.filter(assessment => assessment.day === daysTraining);\n  \n  console.log(`Assessments due today: ${dueToday.length}`);\n  \n  dueToday.forEach((assessment, assessmentIndex) => {\n    console.log(`📋 Scheduling: ${assessment.name} (Day ${assessment.day})`);\n    \n    scheduledAssessments.push({\n      json: {\n        trainee_name: trainee['Full Name'],\n        trainee_email: trainee['Email Address'],\n        coach_email: getCoachEmail(trainee['Coach Name']),\n        role: role,\n        assessment_name: assessment.name,\n        form_url: assessment.formUrl,\n        instructions: assessment.instructions,\n        training_day: daysTraining\n      }\n    });\n  });\n});\n\nconsole.log(`\\n=== FINAL RESULT ===`);\nconsole.log(`Total assessments scheduled: ${scheduledAssessments.length}`);\n\nif (scheduledAssessments.length === 0) {\n  console.log('❌ No assessments scheduled - check data and timing');\n}\n\nreturn scheduledAssessments;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        -160
+      ],
+      "id": "76afaab9-48c3-4459-81d5-558416ef9035",
+      "name": "Assessment Scheduler"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.coach_email }}",
+        "subject": "={{ $json.trainee_name }}'s {{ $json.assessment_name }} Assessment",
+        "emailType": "text",
+        "message": "=Hi Coach,  \n\n{{ $json.trainee_name }} - ({{ $json.role }}) is ready for their {{ $json.assessment_name }} today (Day {{ $json.training_day }} of training).  \n\n📋 Assessment Details: \n• Assessment: {{ $json.assessment_name }} \n• Trainee: {{ $json.trainee_name }}   \n• Training Day: {{ $json.training_day }}  \n\n🔗 Complete Assessment: {{ $json.form_url }}  📝 \n\nInstructions:{{ $json.instructions }}  \n\nPlease complete this assessment by end of day.  \n\nBest regards, \nAndrea",
+        "options": {
+          "ccList": "andrea.kaur@storehub.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        -160
+      ],
+      "id": "20b6b96d-6617-4154-9cd5-44dc36d82e78",
+      "name": "Send Assessment Forms Link",
+      "webhookId": "4a3a5e73-95c8-4836-a446-14ad671ee07f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "M8WHs7W6uy2BUq7w",
+          "name": "AK's"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Monitor Status Changes": {
+      "main": [
+        [
+          {
+            "node": "Ready for Assessment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready for Assessment?": {
+      "main": [
+        [
+          {
+            "node": "Assessment Scheduler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assessment Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Send Assessment Forms Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "2b4251a0-37a4-435c-826b-4a57f76a8bc7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6eacfac65a18e093e28166dd4b59b1b46d26a5d7ab5531653cb1cf62db95e85"
+  },
+  "id": "QiJLhdgpcLFI6DFt",
+  "tags": []
+}

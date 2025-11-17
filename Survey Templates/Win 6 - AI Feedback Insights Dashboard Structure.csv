@@ -1,0 +1,52 @@
+Sheet Name,Column,Data Type,Description,Source,AI Analysis Type
+AI Insights,Timestamp,DateTime,When the feedback was analyzed,n8n workflow,System Generated
+AI Insights,Trainee Name,Text,Full name of the trainee who submitted feedback,Master New Hire List,Identification
+AI Insights,Email,Email,Trainee email address,Master New Hire List,Identification
+AI Insights,Department,Text,Trainee role/department,Master New Hire List,Classification
+AI Insights,Overall Sentiment,Text,"Positive, Neutral, or Negative",OpenAI GPT-4 Analysis,Sentiment Analysis
+AI Insights,Key Themes,Text,Major themes identified (semicolon separated),OpenAI GPT-4 Analysis,Theme Extraction
+AI Insights,Improvement Suggestions,Text,Actionable improvements (semicolon separated),OpenAI GPT-4 Analysis,Recommendation Generation
+AI Insights,Urgency Level,Text,"Low, Medium, or High",OpenAI GPT-4 Analysis,Priority Classification
+AI Insights,Category,Text,"Success Story, Attention Required, Immediate Action, Standard Feedback",n8n Processing Logic,Auto Categorization
+AI Insights,Requires Follow-up,Boolean,TRUE if needs immediate attention,n8n Processing Logic,Action Trigger
+AI Insights,Assigned To,Text,Coach or Training Team member responsible,Master New Hire List + Logic,Responsibility Assignment
+AI Insights,AI Summary,Long Text,Comprehensive AI-generated summary,OpenAI GPT-4 Analysis,Summary Generation
+AI Insights,Success Patterns,Text,Positive patterns identified (semicolon separated),OpenAI GPT-4 Analysis,Pattern Recognition
+AI Insights,Confidence Score,Decimal,AI analysis confidence (0.0 to 1.0),n8n Processing Logic,Quality Metric
+AI Insights,Status,Text,"New, In Review, Addressed, Closed",Manual Update,Workflow Status
+AI Insights,Actions Taken,Long Text,Follow-up actions performed,Manual Update,Action Log
+AI Insights,Resolution Date,DateTime,When issue was resolved,Manual Update,Completion Tracking
+Executive Summary,Metric,Text,Key performance indicator name,Aggregation Formula,Dashboard Metric
+Executive Summary,Value,Number,Current metric value,Calculated from AI Insights,Dashboard Value
+Executive Summary,Previous Value,Number,Previous period value for comparison,Historical Data,Trend Analysis
+Executive Summary,Trend,Text,"Improving, Stable, Declining",Formula Calculation,Trend Indicator
+Executive Summary,Last Updated,DateTime,When metric was last calculated,System Timestamp,Freshness Indicator
+Theme Analytics,Theme,Text,Specific theme identified across responses,AI Analysis Aggregation,Theme Tracking
+Theme Analytics,Frequency,Number,How many times theme appears,COUNT function,Occurrence Metric
+Theme Analytics,Average Sentiment,Decimal,Average sentiment for this theme,AVERAGE calculation,Theme Sentiment
+Theme Analytics,Departments Affected,Text,Which roles mention this theme,Department grouping,Impact Scope
+Theme Analytics,Trend Direction,Text,"Increasing, Stable, Decreasing",Time-based comparison,Theme Evolution
+Theme Analytics,Priority Score,Number,Calculated priority (1-100),Weighted scoring algorithm,Action Prioritization
+Role Performance,Department,Text,Role/department name,Master New Hire List,Role Classification
+Role Performance,Total Responses,Number,Feedback responses received,COUNT aggregation,Response Volume
+Role Performance,Average Sentiment Score,Decimal,Numeric sentiment average,Sentiment scoring,Role Satisfaction
+Role Performance,Top Positive Theme,Text,Most common positive feedback,Theme analysis,Success Indicator  
+Role Performance,Top Concern,Text,Most common negative feedback,Theme analysis,Risk Indicator
+Role Performance,Improvement Suggestions,Number,Count of actionable suggestions,Suggestion counting,Action Items
+Role Performance,Follow-up Required,Number,Responses needing attention,Boolean COUNT,Attention Metric
+Coach Performance,Coach Name,Text,Coach name from Master New Hire List,Master New Hire List,Coach Identification
+Coach Performance,Trainees Coached,Number,Number of trainees assigned,COUNT function,Coaching Load
+Coach Performance,Average Feedback Score,Decimal,Average trainee satisfaction with coach,Sentiment aggregation,Coach Effectiveness
+Coach Performance,Positive Mentions,Number,Count of positive coach feedback,Theme analysis,Recognition Metric
+Coach Performance,Improvement Areas,Text,Common coaching improvement themes,AI theme extraction,Development Areas
+Coach Performance,Response Rate,Percentage,Percentage of trainees who provided feedback,Response calculation,Engagement Rate
+Real-Time Alerts,Alert ID,Text,Unique alert identifier,Auto-generated,System ID
+Real-Time Alerts,Alert Type,Text,"Critical Feedback, Negative Trend, Coach Issue",Alert classification,Alert Category
+Real-Time Alerts,Trainee Name,Text,Affected trainee name,AI Insights source,Alert Subject
+Real-Time Alerts,Department,Text,Affected department,AI Insights source,Alert Scope
+Real-Time Alerts,Alert Message,Text,AI-generated alert description,OpenAI summarization,Alert Content
+Real-Time Alerts,Urgency,Text,"High, Medium, Low",AI analysis output,Alert Priority
+Real-Time Alerts,Created Date,DateTime,When alert was generated,System timestamp,Alert Timing
+Real-Time Alerts,Status,Text,"New, Acknowledged, In Progress, Resolved",Manual update,Alert Status
+Real-Time Alerts,Assigned To,Text,Who is handling the alert,Assignment logic,Responsibility
+Real-Time Alerts,Resolution Notes,Long Text,Actions taken and outcome,Manual entry,Resolution Tracking

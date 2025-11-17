@@ -1,0 +1,4 @@
+Theme,Frequency,Priority Score,Affected Departments,Sentiment,Recommended Actions,Implementation Status,Owner
+"Main issue/topic (e.g., ""Training Pace Too Fast"", ""Need More Practice"")",How many times this theme appears across feedback,"Calculated importance (1-100, based on frequency + sentiment)",Which roles mention this theme,Average sentiment when this theme appears (Positive/Negative),AI-suggested improvements for this theme,New/Planning/In Progress/Complete,Who's responsible for addressing this theme
+Training Pace Too Fast,3,85,"Merchant Care, Business Consultant",Negative,"Extend training duration, add practice sessions",New,Andrea K.
+Coach Support Excellent,5,75,All Departments,Positive,"Continue current approach, document best practices",New,Andrea K.

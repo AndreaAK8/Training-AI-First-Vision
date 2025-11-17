@@ -1,0 +1,569 @@
+{
+  "name": "Win 3: Incomplete Assessment Alerter",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                3
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4421bc35-5f3c-4edb-bab0-e0e6328d20a6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:U"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4600e53e-b6c7-43ae-80bb-994a81b2db92",
+      "name": "Get All Trainees",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== WIN 3: SMART REMINDER LOGIC - WITH DYNAMIC COACH LOOKUP =====\n\nconsole.log('=== STARTING SMART REMINDER LOGIC ===');\n\n// ========================================\n// STEP 1: GET COACH DIRECTORY FOR DYNAMIC EMAIL LOOKUP\n// ========================================\n\nconst coachDirectory = $('Get Coach Directory').all();\nconsole.log(`Loaded ${coachDirectory.length} coach directory entries`);\n\n// Build coach email map from directory\nfunction getCoachEmail(coachName) {\n  if (!coachName) {\n    console.log('⚠️ No coach name provided, defaulting to Andrea');\n    return 'andrea.kaur@storehub.com';\n  }\n  \n  // Clean the coach name (trim whitespace)\n  const cleanName = coachName.trim();\n  \n  // Look up in coach directory\n  const coach = coachDirectory.find(c => {\n    const dirCoachName = c.json['Coach Name']?.trim();\n    return dirCoachName && dirCoachName.toLowerCase() === cleanName.toLowerCase();\n  });\n  \n  if (coach && coach.json['Coach Email']) {\n    console.log(`✅ Found email for ${cleanName}: ${coach.json['Coach Email']}`);\n    return coach.json['Coach Email'];\n  }\n  \n  // Fallback: construct email from name\n  console.log(`⚠️ Coach ${cleanName} not found in directory, using fallback`);\n  const emailName = cleanName.toLowerCase().replace(/\\s+/g, '.');\n  return `${emailName}@storehub.com`;\n}\n\n// ========================================\n// STEP 2: GET INPUT DATA (TRAINEES WITH INCOMPLETE ASSESSMENTS)\n// ========================================\n\nlet incompleteTrainees = [];\n\ntry {\n  const inputData = $input.all();\n  console.log('Number of inputs:', inputData.length);\n  \n  if (inputData.length > 0) {\n    const rawData = inputData[0].json;\n    console.log('Raw data type:', typeof rawData);\n    console.log('Is array?', Array.isArray(rawData));\n    \n    if (Array.isArray(rawData)) {\n      incompleteTrainees = rawData;\n    } else {\n      incompleteTrainees = [rawData];\n    }\n  }\n  \n  console.log('Total trainees processed:', incompleteTrainees.length);\n} catch (error) {\n  console.log('Error processing input:', error);\n  return [];\n}\n\nconst remindersToSend = [];\n\n// ========================================\n// STEP 3: PROCESS EACH TRAINEE WITH INCOMPLETE ASSESSMENTS\n// ========================================\n\nincompleteTrainees.forEach((trainee, index) => {\n  console.log(`\\nProcessing trainee ${index + 1}: ${trainee['Full Name']}`);\n  \n  const reminderCount = parseInt(trainee['Reminder Count']) || 0;\n  const lastReminderSent = trainee['Last Reminder Sent'];\n  const daysSinceTrainingStart = parseInt(trainee['Days since Training Start ']) || 0;\n  const incompleteCount = parseInt(trainee['Total Assessments Incomplete']) || 0;\n  \n  console.log(`- Reminder count: ${reminderCount}`);\n  console.log(`- Days since training: ${daysSinceTrainingStart}`);\n  console.log(`- Incomplete assessments: ${incompleteCount}`);\n  \n  let shouldSendReminder = false;\n  \n  // REMINDER LOGIC:\n  // 1. First reminder: Always send if incomplete > 0 and days > 1\n  // 2. Subsequent reminders: Only after 3 days gap, max 2 total\n  \n  if (reminderCount === 0) {\n    // First reminder\n    if (incompleteCount > 0 && daysSinceTrainingStart > 1) {\n      shouldSendReminder = true;\n      console.log('→ First reminder - sending');\n    }\n  } else if (reminderCount < 2) {\n    // Subsequent reminders (max 2 total)\n    if (lastReminderSent) {\n      try {\n        const lastReminderDate = new Date(lastReminderSent);\n        const daysSinceLastReminder = Math.floor((new Date() - lastReminderDate) / (1000 * 60 * 60 * 24));\n        console.log(`- Days since last reminder: ${daysSinceLastReminder}`);\n        \n        if (daysSinceLastReminder >= 3) {\n          shouldSendReminder = true;\n          console.log('→ Subsequent reminder - sending (3+ days gap)');\n        } else {\n          console.log('→ Skipping (too recent)');\n        }\n      } catch (error) {\n        console.log('→ Error parsing last reminder date, sending reminder');\n        shouldSendReminder = true;\n      }\n    } else {\n      // No last reminder date, send it\n      shouldSendReminder = true;\n      console.log('→ No last reminder date - sending');\n    }\n  } else {\n    console.log('→ Maximum reminders reached (2)');\n  }\n  \n  if (shouldSendReminder) {\n    remindersToSend.push({\n      trainee_name: trainee['Full Name'],\n      trainee_email: trainee['Email Address'],\n      coach_name: trainee['Coach Name'],\n      coach_email: getCoachEmail(trainee['Coach Name']),\n      role: trainee.Department,\n      country: trainee.Country,  // ← ADDED COUNTRY FIELD\n      incomplete_count: incompleteCount,\n      days_training: daysSinceTrainingStart,\n      current_reminder_count: reminderCount,\n      new_reminder_count: reminderCount + 1,\n      reminder_date: new Date().toISOString(),\n      total_required: parseInt(trainee['Total Assessments Required']) || 0,\n      total_completed: parseInt(trainee['Total Assessments Completed']) || 0\n    });\n  }\n});\n\n// ========================================\n// STEP 4: RETURN RESULTS\n// ========================================\n\nconsole.log(`\\n=== REMINDER SUMMARY ===`);\nconsole.log(`Total trainees processed: ${incompleteTrainees.length}`);\nconsole.log(`Reminders to send: ${remindersToSend.length}`);\n\nif (remindersToSend.length === 0) {\n  console.log('No reminders needed at this time');\n  return [];\n}\n\nconsole.log('Reminders being sent to:', remindersToSend.map(r => `${r.trainee_name} (${r.country}) → ${r.coach_email}`));\n\nreturn remindersToSend;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "ec3ca7cb-38f8-4035-af01-b23bef1506c3",
+      "name": "Smart Reminder Logic"
+    },
+    {
+      "parameters": {
+        "sendTo": "=andrea.kaur@storehub.com",
+        "subject": "=⚠️ {{ $json.country }} {{ $json.role }} - Incomplete Assessment Reminder",
+        "emailType": "text",
+        "message": "=Hi {{ $json.country }} {{ $json.role }} Coaching Team,\n\nThis is a friendly reminder that {{ $json.total_trainees }} trainee(s) in your team have incomplete assessments that need your attention.\n\n📊 Assessment Status:\n\n{{ $json.trainee_list }}\n\n🎯 Action Required:\nPlease complete the remaining assessment(s) for your trainees at your earliest convenience. These assessments are important for tracking their training progress and ensuring they receive proper support.\n\n📋 Assessment forms can be found in your recent emails from the Assessment Scheduler, or please reach out if you need the links resent.\n\n📈 Summary:\n• Region: {{ $json.country }}\n• Role: {{ $json.role }}\n• Total Trainees with Incomplete: {{ $json.total_trainees }}\n• Total Incomplete Assessments: {{ $json.total_incomplete }}\n\nThank you for your attention to this matter!\n\nBest regards,\nAndrea K.\nSr. Training & KB Specialist\n\n---\nThis is an automated reminder from the Training Assessment System.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "65c89aa2-1d6a-4eb6-a5d4-7a6808a73cb0",
+      "name": "Send a message",
+      "webhookId": "0b4fc073-0760-47a6-9815-21a0814b08be",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "M8WHs7W6uy2BUq7w",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1409163176,
+          "mode": "list",
+          "cachedResultName": "Coach & Managers Directory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=1409163176"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:H"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "30d1dccc-d928-4fb6-a6a9-b2c0bfdf1f13",
+      "name": "Get Coach Directory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2380bfe7-1a70-4857-b1dc-187e965c65d2",
+              "leftValue": "={{ parseInt($json['Total Assessments Incomplete']) || 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "42dcb436-4e34-4cb0-ad9c-e3f8cc8193b2",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Email Sent",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "78e3ffae-391e-47f5-aefa-43b5ef83626c",
+              "leftValue": "={{ $json['Days since Training Start '] }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "4d653045-40ae-4117-ae2d-15bb733f3459",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== WIN 3: GROUP REMINDERS BY ROLE + COUNTRY =====\n\nconsole.log('=== STARTING REMINDER GROUPING ===');\n\n// Get reminders from Smart Reminder Logic\nconst reminders = $input.all().map(item => item.json);\nconsole.log(`Processing ${reminders.length} reminders`);\n\n// Get coach directory for lookups\nconst coachDirectory = $('Get Coach Directory').all();\nconsole.log(`Loaded ${coachDirectory.length} coach directory entries`);\n\n// Group reminders by Role + Country\nconst groups = new Map();\n\nreminders.forEach(reminder => {\n  const key = `${reminder.role}_${reminder.country || 'Unknown'}`;\n  \n  if (!groups.has(key)) {\n    groups.set(key, {\n      role: reminder.role,\n      country: reminder.country || 'Unknown',\n      trainees: [],\n      total_incomplete: 0\n    });\n  }\n  \n  const group = groups.get(key);\n  group.trainees.push({\n    name: reminder.trainee_name,\n    email: reminder.trainee_email,\n    incomplete_count: reminder.incomplete_count,\n    days_training: reminder.days_training,\n    total_required: reminder.total_required,\n    total_completed: reminder.total_completed,\n    coach_name: reminder.coach_name,\n    // ADD REMINDER TRACKING FIELDS:\n    reminder_date: reminder.reminder_date,\n    new_reminder_count: reminder.new_reminder_count,\n    current_reminder_count: reminder.current_reminder_count\n  });\n  group.total_incomplete += reminder.incomplete_count;\n});\n\nconsole.log(`Created ${groups.size} Role+Country groups`);\n\n// For each group, get ALL coaches for that Role+Country\nconst results = [];\n\ngroups.forEach((group, key) => {\n  console.log(`\\nProcessing group: ${group.role} (${group.country})`);\n  \n  // Find all coaches for this Role+Country\n  const coaches = coachDirectory.filter(c => {\n    const matchRole = c.json['Role'] === group.role;\n    const matchCountry = c.json['Country'] === group.country;\n    return matchRole && matchCountry && c.json['Coach Email'];\n  });\n  \n  // Get unique coach emails\n  const coachEmails = [...new Set(coaches.map(c => c.json['Coach Email']))];\n  const coachNames = [...new Set(coaches.map(c => c.json['Coach Name']))];\n  \n  console.log(`Found ${coachEmails.length} coaches:`, coachEmails);\n  \n  if (coachEmails.length === 0) {\n    console.log('⚠️ No coaches found, defaulting to Andrea');\n    coachEmails.push('andrea.kaur@storehub.com');\n    coachNames.push('Andrea');\n  }\n  \n  // Create trainee list for email\n  const traineeList = group.trainees.map((t, idx) => \n    `${idx + 1}. ${t.name} - ${t.incomplete_count} incomplete (Day ${t.days_training}) [Coach: ${t.coach_name}]`\n  ).join('\\n');\n  \n  results.push({\n    role: group.role,\n    country: group.country,\n    coach_emails: coachEmails.join(', '),\n    coach_names: coachNames.join(', '),\n    total_trainees: group.trainees.length,\n    total_incomplete: group.total_incomplete,\n    trainee_list: traineeList,\n    trainees_data: group.trainees // This now includes reminder tracking fields\n  });\n});\n\nconsole.log(`\\n=== GROUPING COMPLETE ===`);\nconsole.log(`Total groups to notify: ${results.length}`);\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "d1e57666-aaad-42b7-b119-bd092fb988b5",
+      "name": "Group Reminders by Role+Country"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the current group's data from the input (coming from Send a message)\n// We need to reference back to the Group node's output for this execution item\nconst groupData = $input.first().json;\n\n// Check if trainees_data exists\nif (!groupData.trainees_data || groupData.trainees_data.length === 0) {\n  console.log('No trainees_data found, trying to get from Group node');\n  // Fallback: try to get from the pairedItem reference\n  const groupNodeData = $('Group Reminders by Role+Country').item.json;\n  return groupNodeData.trainees_data.map(trainee => ({\n    json: trainee\n  }));\n}\n\nconsole.log(`Extracting ${groupData.trainees_data.length} trainees for sheet update`);\n\n// Return each trainee as a separate item for sheet update\nreturn groupData.trainees_data.map(trainee => ({\n  json: trainee\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "3eb9e8b9-ffba-4af4-877e-987ba7ece3f5",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email Address": "={{ $json.email }}",
+            "Last Reminder Sent": "={{ $json.reminder_date }}",
+            "Reminder Count": "={{ $json.new_reminder_count }}"
+          },
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Training Start Date",
+              "displayName": "Training Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Name",
+              "displayName": "Coach Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Email",
+              "displayName": "Coach Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Sent Date",
+              "displayName": "Email Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Coach",
+              "displayName": "Assigned Coach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Notified",
+              "displayName": "Coach Notified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Required",
+              "displayName": "Total Assessments Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Completed",
+              "displayName": "Total Assessments Completed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Assessments Incomplete",
+              "displayName": "Total Assessments Incomplete",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days since Training Start ",
+              "displayName": "Days since Training Start ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Reminder Sent",
+              "displayName": "Last Reminder Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "BackOffice Setup Status",
+              "displayName": "BackOffice Setup Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BackOffice Access Granted",
+              "displayName": "BackOffice Access Granted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Suvery Sent Date",
+              "displayName": "Suvery Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1648,
+        0
+      ],
+      "id": "1ad73068-dd24-45f6-ab07-568062159579",
+      "name": "Log Reminder sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Coach Directory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Trainees": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Reminder Logic": {
+      "main": [
+        [
+          {
+            "node": "Group Reminders by Role+Country",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Coach Directory": {
+      "main": [
+        [
+          {
+            "node": "Get All Trainees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Smart Reminder Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group Reminders by Role+Country": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Log Reminder sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b9924578-2c65-4d80-928d-a05cb4be01fe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6eacfac65a18e093e28166dd4b59b1b46d26a5d7ab5531653cb1cf62db95e85"
+  },
+  "id": "dA5unv4h4d3cMm2J",
+  "tags": []
+}

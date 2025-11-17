@@ -1,0 +1,38 @@
+Role,Assessment Name,Learning Score Weightage,Passing Rate
+Merchant Care,Hardware Setup Assessment,20%,80%
+Merchant Care,Care Mock Test,45%,80%
+Marketing,All in One Quiz,50%,80%
+Marketing,Hardware Setup Assessment,50%,80%
+Merchant Onboarding Manager,All in One Quiz,20%,80%
+Merchant Onboarding Manager,Advance System & Networking Quiz,10%,80%
+Merchant Onboarding Manager,Hardware Setup Assessment,5%,80%
+Merchant Onboarding Manager,Training Assessment (F&B),10%,80%
+Merchant Onboarding Manager,Training Assessment (Retail),10%,80%
+Merchant Onboarding Manager,Welcome Call Assessment,11.25%,80%
+Merchant Onboarding Manager,Go Live Assessment,11.25%,80%
+Merchant Onboarding Manager,Training Mock Test (F&B),11.25%,80%
+Merchant Onboarding Manager,Training Mock Test (Retail),11.25%,80%
+Customer Success Manager,All in One Quiz,20%,80%
+Customer Success Manager,Advance System & Networking Quiz,10%,80%
+Customer Success Manager,Hardware Setup Assessment,5%,80%
+Customer Success Manager,CSM Assessment,20%,80%
+Customer Success Manager,CSM Roleplay Assessment - 1,22.5%,80%
+Customer Success Manager,CSM Roleplay Assessment - 2,22.5%,80%
+Onboarding Specialist,All in One Quiz,20%,80%
+Onboarding Specialist,Advance System & Networking Quiz,10%,80%
+Onboarding Specialist,Hardware Setup Assessment,5%,80%
+Onboarding Specialist,Training Assessment (F&B),10%,80%
+Onboarding Specialist,Training Assessment (Retail),10%,80%
+Onboarding Specialist,Training Mock Test (F&B),22.5%,80%
+Onboarding Specialist,Training Mock Test (Retail),22.5%,80%
+Business Consultant,All in One Quiz,20%,80%
+Business Consultant,BC Pitching Assessment - F&B,5%,80%
+Business Consultant,BC Pitching Assessment - Retail,5%,80%
+Business Consultant,BC SPIN Trial Session,5%,80%
+Business Consultant,BC SPIN Assessment - Session 2,5%,80%
+Business Consultant,BC Closing Skills - Session 1,5%,80%
+Business Consultant,BC Closing Skills - Session 2,5%,80%
+Business Consultant,BC Full Pitching - F&B,10%,80%
+Business Consultant,BC Full Pitching - Retail,10%,80%
+Business Consultant,BC Mock Test - F&B,17.5%,80%
+Business Consultant,BC Mock Test - Retail,17.5%,80%

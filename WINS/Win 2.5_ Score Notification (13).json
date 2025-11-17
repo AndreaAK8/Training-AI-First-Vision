@@ -1,0 +1,1321 @@
+{
+  "name": "Win 2.5: Score Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        944
+      ],
+      "id": "2fcffc3b-f8c8-4123-a2f0-b9c6460b7f72",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a5bfe1f4-ec6d-482f-80f6-53bbc4ac1c26",
+              "leftValue": "={{ $json.Score }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "86b0363c-a861-4033-bb5e-89429301e3d4",
+              "leftValue": "={{ $json['New Hire Email'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2656,
+        912
+      ],
+      "id": "8ffdd395-61e6-40a8-991f-2d9985ad6d8b",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Get the Master New Hire List\nconst masterList = $('Get Master New Hire List').all();\n\n// Get the notification log to check for duplicates\nconst notificationLog = $('Check Notification Log').all();\n\n// Build a lookup map from the Master New Hire List using email as the key\nconst traineeMap = new Map();\nmasterList.forEach(record => {\n  if (record.json && record.json['Email Address']) {\n    const email = record.json['Email Address'].toLowerCase().trim();\n    traineeMap.set(email, {\n      fullName: record.json['Full Name'],\n      department: record.json['Department'],\n      country: record.json['Country'] || 'Not Specified',\n      trainingStartDate: record.json['Training Start Date'],\n      daysElapsed: record.json['Days since Training Start'],\n      coachName: record.json['Coach Name']\n    });\n  }\n});\n\nconsole.log(`Built lookup map with ${traineeMap.size} trainees`);\n\n// Build a set of already-notified combinations (email + assessment)\nconst notifiedSet = new Set();\nnotificationLog.forEach(log => {\n  if (log.json && log.json['Trainee Email'] && log.json['Assessment Name']) {\n    const key = `${log.json['Trainee Email']}_${log.json['Assessment Name']}`;\n    notifiedSet.add(key);\n  }\n});\n\nconsole.log(`Found ${notifiedSet.size} already notified assessments`);\n\nconst results = [];\n\nfunction getAssessmentName(item) {\n  // Prioritize 'Assessment Type' from Google Form if available\n  if (item['Assessment Type']) {\n    return item['Assessment Type'];\n  }\n  // Fallback to keyword detection if 'Assessment Type' is not present\n  const subject = item['Assessment Name'] || item['Subject'] || '';\n  if (subject.includes('Hardware')) return 'Hardware Assessment';\n  if (subject.includes('Care Mock Test')) return 'Care Mock Test';\n  if (subject.includes('BC Closing Skills')) return 'BC Closing Skills - Session 1';\n  if (subject.includes('BC Pitching Assessment')) return 'BC Pitching Assessment - F&B';\n  if (subject.includes('BC SPIN Assessment')) return 'BC SPIN Assessment - Session 2';\n  if (subject.includes('CSM Roleplay Assessment')) return 'CSM Roleplay Assessment - 1';\n  return 'Unknown Assessment';\n}\n\nfunction getCoachEmail(coachName) {\n  const coachEmailMap = {\n    'Andrea': 'andrea.kaur@storehub.com',\n    'Ain': 'ain.nizar@storehub.com',\n    'Izzuddin': 'izzuddin.azizol@storehub.com',\n    'Nicholas Eng': 'nicholas.eng@storehub.com',\n    'Nic': 'nicholas.eng@storehub.com',\n    'Chester Reyes': 'chester.reyes@storehub.com',\n    'Joshua': 'joshua.guevarra@storehub.com',\n    'Joshua Guevarra': 'joshua.guevarra@storehub.com',\n    'Sheryll Ramos': 'sheryll.ramos@storehub.com',\n    'Daisy Lady Garrido': 'daisy.garrido@storehub.com',\n    'Javelyn Hee': 'javelyn.hee@storehub.com',\n    'Javelyn': 'javelyn.hee@storehub.com',\n    'Iwin Tay': 'iwin.tay@storehub.com',\n    'Iwin': 'iwin.tay@storehub.com',\n    'Angelica Marie Dublado': 'angelica.d@storehub.com',\n    'Gun': 'kannika.k@storehub.com',\n    'Kannika': 'kannika.k@storehub.com',\n    'Danjho': 'francis.cayabyab@storehub.com',\n    'Francis': 'francis.cayabyab@storehub.com',\n    'Taii': 'patiya.kul@storehub.com',\n    'Patiya': 'patiya.kul@storehub.com',\n    'Lookkaew': 'srijira.k@storehub.com',\n    'Srijira': 'srijira.k@storehub.com',\n  };\n  return coachEmailMap[coachName] || 'andrea.kaur@storehub.com';\n}\n\nfunction processScore(scoreString) {\n  if (!scoreString) {\n    return { score: null, passFail: 'N/A', statusEmoji: '⚪' };\n  }\n  const scoreMatch = scoreString.match(/(\\d+(\\.\\d+)?)%?/);\n  let score = scoreMatch ? parseFloat(scoreMatch[1]) : null;\n\n  if (score === null) {\n    return { score: null, passFail: 'N/A', statusEmoji: '⚪' };\n  }\n\n  const passThreshold = 80;\n  const passFail = score >= passThreshold ? 'PASS' : 'FAIL';\n  const statusEmoji = score >= passThreshold ? '✅' : '❌';\n\n  return { score: `${score}%`, passFail, statusEmoji };\n}\n\nfor (const item of items) {\n  const traineeEmail = (item['New Hire Email'] || item['Email Address'] || '').toLowerCase().trim();\n  \n  if (!traineeEmail) {\n    console.log('Skipping item with no email');\n    continue;\n  }\n\n  const assessmentName = getAssessmentName(item);\n  const notificationKey = `${traineeEmail}_${assessmentName}`;\n\n  // Check for duplicates\n  if (notifiedSet.has(notificationKey)) {\n    console.log(`Skipping duplicate: ${notificationKey}`);\n    continue;\n  }\n\n  // Look up trainee details from Master New Hire List using email\n  const traineeDetails = traineeMap.get(traineeEmail);\n  \n  let traineeName, department, country, trainingStartDate, daysElapsed, coachName;\n  \n  if (traineeDetails) {\n    // Use standardized data from Master New Hire List\n    traineeName = traineeDetails.fullName;\n    department = traineeDetails.department;\n    country = traineeDetails.country;\n    trainingStartDate = traineeDetails.trainingStartDate;\n    daysElapsed = traineeDetails.daysElapsed;\n    coachName = traineeDetails.coachName;\n    console.log(`✅ Found ${traineeName} in Master List`);\n  } else {\n    // Fallback: trainee not in Master List yet\n    console.log(`⚠️ Warning: ${traineeEmail} not found in Master New Hire List`);\n    traineeName = item['New Hire Full Name'] || item['Full Name'] || 'Unknown Trainee';\n    department = item['Department/Role'] || 'Unknown';\n    country = 'Not Specified';\n    trainingStartDate = 'Not Specified';\n    daysElapsed = 'N/A';\n    coachName = item['Coach Name'] || 'Andrea';\n  }\n\n  const scoreData = processScore(item['Score']);\n  const coachEmail = getCoachEmail(coachName);\n\n  results.push({\n    json: {\n      notification_id: notificationKey,\n      trainee_name: traineeName,\n      trainee_email: traineeEmail,\n      department: department,\n      country: country,\n      role: department,\n      training_start_date: trainingStartDate,\n      days_elapsed: daysElapsed,\n      assessment_name: assessmentName,\n      score: scoreData.score,\n      pass_fail: scoreData.passFail,\n      status_emoji: scoreData.statusEmoji,\n      coach_name: coachName,\n      coach_email: coachEmail,\n      remarks: item['Remarks'] || '',\n      timestamp: item['Timestamp'] || new Date().toISOString(),\n    },\n  });\n}\n\nconsole.log(`Created ${results.length} notification records`);\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        912
+      ],
+      "id": "26d29d88-39e0-4d50-8c76-c7cad619dd76",
+      "name": "Code",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 677697051,
+          "mode": "list",
+          "cachedResultName": "Hardware Setup",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=677697051"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        -512
+      ],
+      "id": "36d4a65c-6451-4804-9765-8d23d89f9f05",
+      "name": "Get Hardware Setup",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 337417684,
+          "mode": "list",
+          "cachedResultName": "Care Mock Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=337417684"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        -336
+      ],
+      "id": "c8303f49-d349-4bc2-8120-73a9cd1c9eff",
+      "name": "Get Care Mock Test",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 352234181,
+          "mode": "list",
+          "cachedResultName": "Training Assessment (F&B)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=352234181"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        -160
+      ],
+      "id": "632e3853-62e5-44a7-aede-75036d813704",
+      "name": "Get Training Assessment (F&B)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1966732189,
+          "mode": "list",
+          "cachedResultName": "Training Assessment (Retail)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1966732189"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        32
+      ],
+      "id": "2e3d97fa-a6c6-4486-af62-5ce036f0a5d0",
+      "name": "Get Training Assessment (Retail)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 511740583,
+          "mode": "list",
+          "cachedResultName": "Welcome Call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=511740583"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        224
+      ],
+      "id": "e2119e74-0c39-491c-9a27-7490aa732617",
+      "name": "Get Welcome Call",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 862037734,
+          "mode": "list",
+          "cachedResultName": "Go Live Assessment",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=862037734"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        400
+      ],
+      "id": "8c07436c-bfcc-4ae1-b38a-a29d4dbfabad",
+      "name": "Get Go Live Assessment",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1596235395,
+          "mode": "list",
+          "cachedResultName": "Training Mock Test (F&B)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1596235395"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        592
+      ],
+      "id": "e6275c78-0e07-4043-aeb4-07e5de544cab",
+      "name": "Get Training Mock Test (F&B)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 774558748,
+          "mode": "list",
+          "cachedResultName": "Training Mock Test (Retail)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=774558748"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        784
+      ],
+      "id": "c8a62ec0-cb69-4583-a128-4f378cfd81bf",
+      "name": "Get Training Mock Test (Retail)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 619666490,
+          "mode": "list",
+          "cachedResultName": "Customer Success Manager - Roleplay",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=619666490"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        992
+      ],
+      "id": "01b5821f-b279-48b8-88d6-25c344f9cd08",
+      "name": "Get CSM Roleplay",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 9
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1840,
+        576
+      ],
+      "id": "94f7cd00-1784-4dd0-b633-818d62554b9c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "📊 TIER 1: Multiple Merge Nodes\nMerge A (10 inputs): Assessments 1-10\nMerge B (7 inputs):  Assessments 11-17\n\n📊 TIER 2: Final Merge\nFinal Merge (2 inputs): Merge A + Merge B → Filter → Code → Email",
+        "height": 176,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        208
+      ],
+      "id": "66b21881-686a-4dbf-9ecc-3036a41aed2e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1014073425,
+          "mode": "list",
+          "cachedResultName": "[BC] Pitching",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1014073425"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        1632
+      ],
+      "id": "9de7d252-9474-47da-ba66-7b69fd4bc2bc",
+      "name": "Get BC Pitching",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1874922976,
+          "mode": "list",
+          "cachedResultName": "[BC] SPIN",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1874922976"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        1824
+      ],
+      "id": "e0da3bad-616d-41bc-a2d3-52d07a475f97",
+      "name": "Get BC SPIN",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 767605888,
+          "mode": "list",
+          "cachedResultName": "[BC] Closing",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=767605888"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        2016
+      ],
+      "id": "b333abcd-d143-42bf-803e-0537f27e09e0",
+      "name": "Get BC Closing",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1877804291,
+          "mode": "list",
+          "cachedResultName": "[BC] Full Pitching",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1877804291"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        2208
+      ],
+      "id": "7aa2232e-4c3b-4692-933d-3c99e8cd7274",
+      "name": "Get BC Full PItching",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1034894871,
+          "mode": "list",
+          "cachedResultName": "[BC] Mock Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=1034894871"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        2400
+      ],
+      "id": "cdc6fb54-d45c-420e-8f59-1d5f0bd15b10",
+      "name": "Get BC Mock Test",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1840,
+        1168
+      ],
+      "id": "9abfa755-b4f5-46c5-925f-cf2a7ef71b96",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2176,
+        912
+      ],
+      "id": "9b329c5b-5a79-46e8-90d8-6bbd1120152a",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 857630101,
+          "mode": "list",
+          "cachedResultName": "Notification Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=857630101"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        672
+      ],
+      "id": "b46c64e1-03c7-481c-a05f-c419a45f52ca",
+      "name": "Check Notification Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "13R0oJBp7PfgLjV2gjI_nH3ZEZc40xEzhue6JebsT2G8",
+          "mode": "list",
+          "cachedResultName": "[MASTER] Performance Dashboard - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13R0oJBp7PfgLjV2gjI_nH3ZEZc40xEzhue6JebsT2G8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2122986852,
+          "mode": "list",
+          "cachedResultName": "Individual Progress",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13R0oJBp7PfgLjV2gjI_nH3ZEZc40xEzhue6JebsT2G8/edit#gid=2122986852"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Trainee Name": "={{ $json.trainee_name }}",
+            "Assessment Name": "={{ $json.assessment_name }}",
+            "Score": "={{ $json.score }}",
+            "Coach Email": "={{ $json.coach_email }}",
+            "Timestamp": "={{ $now.toISO() }}",
+            "Email": "={{ $json.trainee_email }}",
+            "Department": "={{ $json.role }}",
+            "Country": "={{ $json.country }}",
+            "Role": "={{ $json.role }}",
+            "Training Start Date": "={{ $json.training_start_date }}",
+            "Days Elapsed": "={{ $json.days_elapsed }}",
+            "Pass/Fail": "={{ $json.pass_fail }}",
+            "Status Emoji": "={{ $json.status_emoji }}",
+            "Coach Name": "={{ $json.coach_name }}",
+            "Remarks": "={{ $json.remarks }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trainee Name",
+              "displayName": "Trainee Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Training Start Date",
+              "displayName": "Training Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Days Elapsed",
+              "displayName": "Days Elapsed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assessment Name",
+              "displayName": "Assessment Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pass/Fail",
+              "displayName": "Pass/Fail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status Emoji",
+              "displayName": "Status Emoji",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Coach Name",
+              "displayName": "Coach Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Coach Email",
+              "displayName": "Coach Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Remarks",
+              "displayName": "Remarks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notification ID",
+              "displayName": "Notification ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3088,
+        912
+      ],
+      "id": "13a3f0a7-088b-42b3-8304-cdee81e4151d",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o",
+          "mode": "list",
+          "cachedResultName": "[Master] New Hire Assessment Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 857630101,
+          "mode": "list",
+          "cachedResultName": "Notification Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bA5ljjILFVBS9caa7_6PIf4nL4FS3sr7UDqohnXFC8o/edit#gid=857630101"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Trainee Name": "={{ $json['Trainee Name'] }}",
+            "Notification ID": "=",
+            "Trainee Email": "={{ $json.Email }}",
+            "Assessment Name": "={{ $json['Assessment Name'] }}",
+            "Notified Date": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Notification ID",
+              "displayName": "Notification ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Trainee Name",
+              "displayName": "Trainee Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Trainee Email",
+              "displayName": "Trainee Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assessment Name",
+              "displayName": "Assessment Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notified Date",
+              "displayName": "Notified Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coach Email",
+              "displayName": "Coach Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3440,
+        912
+      ],
+      "id": "e3e98c73-c74e-4d8f-8671-b3318bf2851f",
+      "name": "Prevent duplicate",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA",
+          "mode": "list",
+          "cachedResultName": "Master New Hire List - 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "New Hire List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ygEYNDbhmtaqjXhO7K_GfWwYK2WtV_erws7n52cWUZA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        1184
+      ],
+      "id": "d28ceb3b-42f5-42ec-8e07-b5559d60cf27",
+      "name": "Get Master New Hire List",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xWkX5ODqyr8g6JBX",
+          "name": "AK's"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Hardware Setup",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Care Mock Test",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Training Assessment (F&B)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Training Assessment (Retail)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Welcome Call",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Go Live Assessment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Training Mock Test (F&B)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Training Mock Test (Retail)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get CSM Roleplay",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get BC Pitching",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get BC SPIN",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get BC Closing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get BC Full PItching",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get BC Mock Test",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Notification Log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Master New Hire List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hardware Setup": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Care Mock Test": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Training Assessment (F&B)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Training Assessment (Retail)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Get Welcome Call": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Get Go Live Assessment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Get Training Mock Test (F&B)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Get Training Mock Test (Retail)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    },
+    "Get CSM Roleplay": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get BC Pitching": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get BC SPIN": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get BC Closing": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get BC Full PItching": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Get BC Mock Test": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Notification Log": {
+      "main": [
+        []
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Prevent duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Master New Hire List": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "702d8d21-3f45-404e-b364-b527af4957c4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6eacfac65a18e093e28166dd4b59b1b46d26a5d7ab5531653cb1cf62db95e85"
+  },
+  "id": "FFvO0BcrnE4rMsrM",
+  "tags": []
+}
